@@ -1,46 +1,35 @@
 import {
-	ChevronDownIcon,
-	ChevronUpIcon,
-	DeleteIcon,
-	EditIcon,
-} from '@chakra-ui/icons';
-import {
 	Box,
 	Button,
 	Flex,
 	Heading,
-	IconButton,
 	Link,
 	Stack,
 	Text,
 } from '@chakra-ui/react';
-import { withUrqlClient } from 'next-urql';
 import NextLink from 'next/link';
-import React, { useState } from 'react';
+import React from 'react';
 import { EditDeletePostButtons } from '../components/EditDeletePostButtons';
 import { Layout } from '../components/Layout';
 import { UpdootSection } from '../components/UpdootSection';
-import { useDeletePostMutation, useMeQuery, usePostsQuery } from '../gen/gql';
-import { createUrqlClient } from '../utils/createUrqlClient';
+import { PostsQuery, usePostsQuery } from '../gen/gql';
 
 const Index = () => {
-	const [variables, setVariables] = useState({
-		limit: 15,
-		cursor: null as null | string,
+	const { data, loading, fetchMore, variables } = usePostsQuery({
+		variables: {
+			limit: 15,
+			cursor: null,
+		},
+		notifyOnNetworkStatusChange: true,
 	});
 
-	// const [{ data: me }] = useMeQuery();
-	const [{ data, fetching }] = usePostsQuery({
-		variables,
-	});
-
-	if (!fetching && !data) {
+	if (!loading && !data) {
 		return <div>you got query failed for some reason</div>;
 	}
 
 	return (
 		<Layout>
-			{!data && fetching ? (
+			{!data && loading ? (
 				<div>loading...</div>
 			) : (
 				<Stack spacing={8}>
@@ -59,14 +48,12 @@ const Index = () => {
 										<Text flex={1} mt={4}>
 											{p.textSnippet}
 										</Text>
-										{/* {me?.me?.id !== p.creator.id ? null : ( */}
 										<Box ml='auto'>
 											<EditDeletePostButtons
 												id={p.id}
 												creatorId={p.creator.id}
 											/>
 										</Box>
-										{/* )} */}
 									</Flex>
 								</Box>
 							</Flex>
@@ -78,12 +65,35 @@ const Index = () => {
 				<Flex>
 					<Button
 						onClick={() => {
-							setVariables({
-								limit: variables.limit,
-								cursor: data.posts.posts[data.posts.posts.length - 1].createdAt,
+							fetchMore({
+								variables: {
+									limit: variables?.limit,
+									cursor:
+										data.posts.posts[data.posts.posts.length - 1].createdAt,
+								},
+								// updateQuery: (
+								// 	previousValues,
+								// 	{ fetchMoreResult }
+								// ): PostsQuery => {
+								// 	if (!fetchMoreResult) {
+								// 		return previousValues as PostsQuery;
+								// 	}
+
+								// 	return {
+								// 		__typename: 'Query',
+								// 		posts: {
+								// 			__typename: 'PaginatedPosts',
+								// 			hasMore: (fetchMoreResult as PostsQuery).posts.hasMore,
+								// 			posts: [
+								// 				...(previousValues as PostsQuery).posts.posts,
+								// 				...(fetchMoreResult as PostsQuery).posts.posts,
+								// 			],
+								// 		},
+								// 	};
+								// },
 							});
 						}}
-						isLoading={fetching}
+						isLoading={loading}
 						m='auto'
 						my={8}
 					>
@@ -95,4 +105,4 @@ const Index = () => {
 	);
 };
 
-export default withUrqlClient(createUrqlClient, { ssr: true })(Index);
+export default Index;
