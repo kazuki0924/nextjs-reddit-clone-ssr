@@ -15,6 +15,8 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
 	const { data, loading } = useMeQuery({ skip: isServer() });
 	let body = null;
 
+	console.log('data', data);
+
 	if (loading) {
 	} else if (!data?.me) {
 		body = (

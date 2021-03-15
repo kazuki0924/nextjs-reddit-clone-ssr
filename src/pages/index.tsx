@@ -12,7 +12,8 @@ import React from 'react';
 import { EditDeletePostButtons } from '../components/EditDeletePostButtons';
 import { Layout } from '../components/Layout';
 import { UpdootSection } from '../components/UpdootSection';
-import { PostsQuery, usePostsQuery } from '../gen/gql';
+import { usePostsQuery } from '../gen/gql';
+import { withApollo } from '../utils/withApollo';
 
 const Index = () => {
 	const { data, loading, fetchMore, variables } = usePostsQuery({
@@ -71,26 +72,6 @@ const Index = () => {
 									cursor:
 										data.posts.posts[data.posts.posts.length - 1].createdAt,
 								},
-								// updateQuery: (
-								// 	previousValues,
-								// 	{ fetchMoreResult }
-								// ): PostsQuery => {
-								// 	if (!fetchMoreResult) {
-								// 		return previousValues as PostsQuery;
-								// 	}
-
-								// 	return {
-								// 		__typename: 'Query',
-								// 		posts: {
-								// 			__typename: 'PaginatedPosts',
-								// 			hasMore: (fetchMoreResult as PostsQuery).posts.hasMore,
-								// 			posts: [
-								// 				...(previousValues as PostsQuery).posts.posts,
-								// 				...(fetchMoreResult as PostsQuery).posts.posts,
-								// 			],
-								// 		},
-								// 	};
-								// },
 							});
 						}}
 						isLoading={loading}
@@ -105,4 +86,4 @@ const Index = () => {
 	);
 };
 
-export default Index;
+export default withApollo({ ssr: false })(Index);

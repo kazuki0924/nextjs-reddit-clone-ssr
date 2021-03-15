@@ -6,8 +6,9 @@ import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import { InputField } from '../../components/InputField';
 import { Wrapper } from '../../components/Wrapper';
-import { useChangePasswordMutation } from '../../gen/gql';
+import { MeDocument, MeQuery, useChangePasswordMutation } from '../../gen/gql';
 import { toErrorMap } from '../../utils/toErrorMap';
+import { withApollo } from '../../utils/withApollo';
 
 export const ChangePassword: NextPage = () => {
 	const router = useRouter();
@@ -26,6 +27,15 @@ export const ChangePassword: NextPage = () => {
 								typeof router.query.token === 'string'
 									? router.query.token
 									: '',
+						},
+						update: (cache, { data }) => {
+							cache.writeQuery<MeQuery>({
+								query: MeDocument,
+								data: {
+									__typename: 'Query',
+									me: data?.changePassword.user,
+								},
+							});
 						},
 					});
 					if (changePasswordRes.data?.changePassword.errors) {
@@ -75,4 +85,4 @@ export const ChangePassword: NextPage = () => {
 	);
 };
 
-export default ChangePassword;
+export default withApollo({ ssr: false })(ChangePassword);

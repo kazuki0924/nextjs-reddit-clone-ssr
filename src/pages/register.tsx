@@ -4,8 +4,9 @@ import { useRouter } from 'next/router';
 import React from 'react';
 import { InputField } from '../components/InputField';
 import { Wrapper } from '../components/Wrapper';
-import { useRegisterMutation } from '../gen/gql';
+import { MeDocument, MeQuery, useRegisterMutation } from '../gen/gql';
 import { toErrorMap } from '../utils/toErrorMap';
+import { withApollo } from '../utils/withApollo';
 
 interface registerProps {}
 
@@ -18,7 +19,18 @@ const Register: React.FC<registerProps> = ({}) => {
 				initialValues={{ email: '', username: '', password: '' }}
 				onSubmit={async (values, { setErrors }) => {
 					{
-						const res = await register({ variables: { options: values } });
+						const res = await register({
+							variables: { options: values },
+							update: (cache, { data }) => {
+								cache.writeQuery<MeQuery>({
+									query: MeDocument,
+									data: {
+										__typename: 'Query',
+										me: data?.register.user,
+									},
+								});
+							},
+						});
 						if (res.data?.register.errors) {
 							setErrors(toErrorMap(res.data.register.errors));
 						} else if (res.data?.register.user) {
@@ -60,4 +72,4 @@ const Register: React.FC<registerProps> = ({}) => {
 	);
 };
 
-export default Register;
+export default withApollo({ ssr: false })(Register);

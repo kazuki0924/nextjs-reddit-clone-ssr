@@ -5,8 +5,9 @@ import { useRouter } from 'next/router';
 import React from 'react';
 import { InputField } from '../components/InputField';
 import { Wrapper } from '../components/Wrapper';
-import { useLoginMutation } from '../gen/gql';
+import { MeDocument, MeQuery, useLoginMutation } from '../gen/gql';
 import { toErrorMap } from '../utils/toErrorMap';
+import { withApollo } from '../utils/withApollo';
 
 const Login: React.FC<{}> = ({}) => {
 	const router = useRouter();
@@ -17,7 +18,19 @@ const Login: React.FC<{}> = ({}) => {
 				initialValues={{ usernameOrEmail: '', password: '' }}
 				onSubmit={async (values, { setErrors }) => {
 					{
-						const res = await login({ variables: values });
+						const res = await login({
+							variables: values,
+							update: (cache, { data }) => {
+								cache.writeQuery<MeQuery>({
+									query: MeDocument,
+									data: {
+										__typename: 'Query',
+										me: data?.login.user,
+									},
+								});
+								cache.evict({ fieldName: 'posts:{}' });
+							},
+						});
 						if (res.data?.login.errors) {
 							setErrors(toErrorMap(res.data.login.errors));
 						} else if (res.data?.login.user) {
@@ -65,4 +78,4 @@ const Login: React.FC<{}> = ({}) => {
 	);
 };
 
-export default Login;
+export default withApollo({ ssr: false })(Login);
